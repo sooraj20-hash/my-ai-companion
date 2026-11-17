@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Mind Map - AI Study Companion{% endblock %}
+{% block page_title %}Interactive Concept Mind Map{% endblock %}
+{% block page_subtitle %}Visual engineering concept tree with expandable and collapsible topic branches.{% endblock %}
+
+{% block content %}
+<div class="mindmap-wrapper" style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Toolbar & Generator Hub -->
+    <div class="dashboard-card" style="padding: 20px 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            
+            <!-- Generator Form -->
+            <form id="genMindmapForm" onsubmit="generateCustomMindmap(event)" style="display: flex; gap: 10px; flex: 1; min-width: 300px; flex-wrap: wrap;">
+                <input type="text" id="mapTopicInput" placeholder="Enter engineering topic (or leave empty to use uploaded PDF notes)..." 
+                       style="flex: 1; min-width: 240px; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;">
+                <button id="genMapBtn" type="submit" class="quick-action-btn" style="height: 38px; font-size: 13px;">
+                    <span id="genMapIcon">🧠</span>
+                    <span id="genMapText">Generate Mind Map</span>
+                </button>
+            </form>
+
+            {% if mindmap %}
+            <!-- Interactive View Controls -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" onclick="expandAllBranches()" class="control-pill-btn">
+                    ➕ Expand All
+                </button>
+                <button type="button" onclick="collapseAllBranches()" class="control-pill-btn">
+                    ➖ Collapse All
+                </button>
+                <input type="text" id="nodeSearchInput" oninput="filterNodes()" placeholder="🔍 Filter concepts..." 
+                       style="padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 9999px; font-size: 12px; width: 160px; outline: none;">
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% if mindmap %}
+    <!-- Mind Map Interactive Tree Container -->
+    <div id="mindmapCanvas" class="dashboard-card" style="padding: 40px 30px; background: radial-gradient(circle at 50% 20%, #eff6ff 0%, #ffffff 80%); border: 2px solid #bfdbfe;">
+        
+        <!-- Central Root Node -->
+        <div style="text-align: center; margin-bottom: 40px;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary-blue); color: #ffffff; padding: 12px 28px; border-radius: 9999px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);">
+                <span style="font-size: 24px;">🧠</span>
+                <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.3px;">{{ mindmap.main_topic }}</span>
+            </div>
+            
+            {% if mindmap.summary %}
+            <p style="font-size: 13px; color: var(--text-muted); max-width: 600px; margin: 12px auto 0; line-height: 1.5;">
+                {{ mindmap.summary }}
+            </p>
+            {% endif %}
+            
+            <div style="margin-top: 10px;">
+                <span style="font-size: 11px; background: #dbeafe; color: #1e40af; font-weight: 700; padding: 3px 10px; border-radius: 9999px;">
+                    {{ mindmap.topics|length }} Core Conceptual Modules
+                </span>
+            </div>
+        </div>
+
+        <!-- Branch Nodes Grid -->
+        <div id="branchesContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
+            
+            {% for topic in mindmap.topics %}
+            <div id="branch_{{ loop.index }}" class="mindmap-branch-card" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--card-shadow); overflow: hidden; transition: all 0.25s ease;">
+                
+                <!-- Clickable Branch Header (Toggle) -->
+                <div class="branch-header" onclick="toggleBranch({{ loop.index }})" style="padding: 18px 20px; background: #f8fafc; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px;">{{ topic.icon or '📌' }}</span>
+                        <div>
+                            <div class="topic-title" style="font-size: 15px; font-weight: 700; color: var(--text-dark);">
+                                {{ topic.name }}
+                            </div>
+                            {% if topic.description %}
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                {{ topic.description }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="subtopic-count-badge" style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px; font-weight: 600;">
+                            {{ topic.subtopics|length }}
+                        </span>
+                        <span id="toggle_icon_{{ loop.index }}" style="font-size: 14px; font-weight: 700; color: var(--primary-blue); width: 22px; height: 22px; border-radius: 50%; background: #ffffff; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
+                            −
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Expandable Subtopics List -->
+                <div id="subtopics_body_{{ loop.index }}" class="subtopics-list" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; background: #ffffff;">
+                    {% for sub in topic.subtopics %}
+                    <div class="subtopic-item" style="background: #f8fafc; border-left: 3px solid var(--primary-blue); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 13px;">
+                        <div class="subtopic-name" style="font-weight: 600; color: var(--text-dark); margin-bottom: 3px;">
+                            ➜ {{ sub.name }}
+                        </div>
+                        {% if sub.detail %}
+                        <div class="subtopic-detail" style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                            {{ sub.detail }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+    {% else %}
+    <!-- Empty State Generator Screen -->
+    <div class="dashboard-card" style="text-align: center; padding: 60px 24px;">
+        <div style="font-size: 64px; margin-bottom: 12px;">🧠</div>
+        <h2 style="font-size: 22px; color: var(--text-dark); margin-bottom: 8px;">No Mind Map Generated Yet</h2>
+        <p style="color: var(--text-muted); font-size: 14px; max-width: 500px; margin: 0 auto 24px;">
+            Transform complex engineering syllabi into visual, interactive concept trees with expandable and collapsible branches.
+        </p>
+
+        {% if has_notes %}
+        <form method="POST" action="/generate_mindmap" style="display: inline-block; margin-bottom: 24px;">
+            <button type="submit" class="quick-action-btn" style="font-size: 15px; padding: 12px 28px;">
+                ⚡ Generate Interactive Tree from Active Notes
+            </button>
+        </form>
+        {% endif %}
+
+        <div>
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">
+                Or explore standard engineering modules:
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" onclick="quickGenerateMap('Operating Systems - Process Scheduling & Memory Management')" class="control-pill-btn">
+                    ⚙️ OS Core Architecture
+                </button>
+                <button type="button" onclick="quickGenerateMap('Computer Networks - OSI & TCP/IP Layered Model')" class="control-pill-btn">
+                    🌐 Computer Networks
+                </button>
+                <button type="button" onclick="quickGenerateMap('Database Management - Normalization & Transactions')" class="control-pill-btn">
+                    💾 DBMS Relational Model
+                </button>
+                <button type="button" onclick="quickGenerateMap('Data Structures - Balanced Trees & Graphs')" class="control-pill-btn">
+                    🌳 Trees & Graphs
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.control-pill-btn {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    color: #475569;
+    padding: 7px 14px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.control-pill-btn:hover {
+    background: #eff6ff;
+    color: var(--primary-blue);
+    border-color: #bfdbfe;
+}
+.mindmap-branch-card.collapsed .subtopics-list {
+    display: none !important;
+}
+.mindmap-branch-card.collapsed {
+    opacity: 0.9;
+}
+</style>
+
+<script>
+    // Expand & Collapse Toggle per branch
+    function toggleBranch(idx) {
+        const branch = document.getElementById('branch_' + idx);
+        const icon = document.getElementById('toggle_icon_' + idx);
+        
+        if (branch.classList.contains('collapsed')) {
+            branch.classList.remove('collapsed');
+            icon.innerText = '−';
+        } else {
+            branch.classList.add('collapsed');
+            icon.innerText = '+';
+        }
+    }
+
+    // Expand All Branches
+    function expandAllBranches() {
+        document.querySelectorAll('.mindmap-branch-card').forEach(b => {
+            b.classList.remove('collapsed');
+        });
+        document.querySelectorAll('[id^="toggle_icon_"]').forEach(icon => {
+            icon.innerText = '−';
+        });
+    }
+
+    // Collapse All Branches
+    function collapseAllBranches() {
+        document.querySelectorAll('.mindmap-branch-card').forEach(b => {
+            b.classList.add('collapsed');
+        });
+        document.querySelectorAll('[id^="toggle_icon_"]').forEach(icon => {
+            icon.innerText = '+';
+        });
+    }
+
+    // Live search & filter through nodes
+    function filterNodes() {
+        const query = document.getElementById('nodeSearchInput').value.toLowerCase().trim();
+        const branches = document.querySelectorAll('.mindmap-branch-card');
+
+        branches.forEach(branch => {
+            const topicText = branch.querySelector('.topic-title').innerText.toLowerCase();
+            const subtopics = branch.querySelectorAll('.subtopic-item');
+            let hasMatch = topicText.includes(query);
+
+            subtopics.forEach(sub => {
+                const subText = sub.innerText.toLowerCase();
+                if (query === '' || subText.includes(query)) {
+                    sub.style.display = '';
+                    if (query !== '' && subText.includes(query)) {
+                        hasMatch = true;
+                        sub.style.background = '#fef3c7'; // highlight match
+                    } else {
+                        sub.style.background = '#f8fafc';
+                    }
+                } else {
+                    sub.style.display = 'none';
+                }
+            });
+
+            if (query === '' || hasMatch) {
+                branch.style.display = '';
+                if (query !== '') {
+                    branch.classList.remove('collapsed'); // auto-expand to show match
+                }
+            } else {
+                branch.style.display = 'none';
+            }
+        });
+    }
+
+    function quickGenerateMap(topic) {
+        document.getElementById('mapTopicInput').value = topic;
+        document.getElementById('genMindmapForm').dispatchEvent(new Event('submit'));
+    }
+
+    async function generateCustomMindmap(e) {
+        e.preventDefault();
+        const topic = document.getElementById('mapTopicInput').value.trim();
+
+        const btn = document.getElementById('genMapBtn');
+        const icon = document.getElementById('genMapIcon');
+        const text = document.getElementById('genMapText');
+
+        btn.disabled = true;
+        icon.innerText = '⏳';
+        text.innerText = 'Mapping Concepts with Gemini...';
+
+        try {
+            const response = await fetch('/generate_mindmap', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: topic })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to generate mind map.'));
+            }
+        } catch (err) {
+            alert('Network error while generating mind map.');
+        } finally {
+            btn.disabled = false;
+            icon.innerText = '🧠';
+            text.innerText = 'Generate Mind Map';
+        }
+    }
+</script>
+{% endblock %}

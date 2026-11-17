@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}AI Performance Analysis - AI Study Companion{% endblock %}
+{% block page_title %}AI Performance Analytics & Progress Tracking{% endblock %}
+{% block page_subtitle %}Visual performance charts, score progression trends, topic mastery analysis, and AI revision recommendations.{% endblock %}
+
+{% block content %}
+<div class="analytics-wrapper" style="max-width: 1050px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Top Key Metrics Cards -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Tests Taken</span>
+                <span class="metric-icon">📝</span>
+            </div>
+            <div class="metric-value">{{ total_tests }}</div>
+            <div class="metric-subtext">Total mock & quiz evaluations</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Average Score</span>
+                <span class="metric-icon">📊</span>
+            </div>
+            <div class="metric-value" style="color: var(--primary-blue);">{{ avg_score }}%</div>
+            <div class="metric-subtext">Across all completed tests</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Highest Score</span>
+                <span class="metric-icon">🏆</span>
+            </div>
+            <div class="metric-value" style="color: #16a34a;">{{ best_score }}%</div>
+            <div class="metric-subtext">Peak performance achieved</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Overall Status</span>
+                <span class="metric-icon">🎯</span>
+            </div>
+            <div class="metric-value" style="font-size: 20px; line-height: 1.4;">
+                {% if avg_score >= 70 %}
+                    <span style="color: #16a34a;">Distinction</span>
+                {% elif avg_score >= 50 %}
+                    <span style="color: #2563eb;">Good Standing</span>
+                {% elif total_tests > 0 %}
+                    <span style="color: #d97706;">Needs Revision</span>
+                {% else %}
+                    <span style="color: var(--text-muted);">No Tests Yet</span>
+                {% endif %}
+            </div>
+            <div class="metric-subtext">VTU / GATE preparation level</div>
+        </div>
+    </div>
+
+    <!-- AI Performance Diagnosis & Recommendation -->
+    <div class="dashboard-card" style="border-left: 4px solid var(--primary-blue); background: linear-gradient(135deg, #ffffff, #eff6ff);">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <div style="font-size: 28px;">🤖</div>
+            <div>
+                <div style="font-weight: 700; font-size: 14px; color: var(--primary-blue); margin-bottom: 4px;">
+                    AI PERFORMANCE INSIGHT & REVISION STRATEGY
+                </div>
+                <div style="font-size: 14px; color: #1e293b; line-height: 1.6;">
+                    {{ recommendation }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if total_tests > 0 %}
+    <!-- Visual Performance Charts Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+        
+        <!-- Chart 1: Score Improvement Over Time (Line Chart) -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <h3 class="dashboard-card-title" style="margin-bottom: 0;">📈 Score Improvement Over Time</h3>
+                <span style="font-size: 11px; color: var(--text-muted); background: #f1f5f9; padding: 3px 8px; border-radius: 4px;">
+                    Chronological Progress
+                </span>
+            </div>
+            <div style="position: relative; height: 260px;">
+                <canvas id="scoreTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 2: Priority Revision Topics (Bar Chart) -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <h3 class="dashboard-card-title" style="margin-bottom: 0;">⚠️ Weak Topics Frequency</h3>
+                <span style="font-size: 11px; color: #991b1b; background: #fee2e2; padding: 3px 8px; border-radius: 4px;">
+                    Questions Missed
+                </span>
+            </div>
+            <div style="position: relative; height: 260px;">
+                <canvas id="weakTopicsChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+    {% endif %}
+
+    <!-- Complete Test Attempts History Table -->
+    <div class="dashboard-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
+            <h3 class="dashboard-card-title" style="margin-bottom: 0;">📋 Complete Test History</h3>
+            <a href="/mock_test" class="quick-action-btn" style="font-size: 12px; padding: 6px 14px;">
+                ➕ Launch New Test
+            </a>
+        </div>
+
+        {% if attempts %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted); background: #f8fafc;">
+                            <th style="padding: 12px 14px;">Date</th>
+                            <th style="padding: 12px 14px;">Exam Pattern</th>
+                            <th style="padding: 12px 14px;">Score</th>
+                            <th style="padding: 12px 14px;">Percentage</th>
+                            <th style="padding: 12px 14px;">Revision Topics</th>
+                            <th style="padding: 12px 14px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in attempts %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 12px 14px; color: var(--text-muted);">{{ a.created_at }}</td>
+                            <td style="padding: 12px 14px; font-weight: 600; color: var(--text-dark);">{{ a.test_type }}</td>
+                            <td style="padding: 12px 14px; font-weight: 600;">{{ a.score }} / {{ a.total }}</td>
+                            <td style="padding: 12px 14px;">
+                                {% if a.percentage >= 70 %}
+                                    <span style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 12px;">
+                                        {{ a.percentage }}%
+                                    </span>
+                                {% elif a.percentage >= 50 %}
+                                    <span style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 12px;">
+                                        {{ a.percentage }}%
+                                    </span>
+                                {% else %}
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 12px;">
+                                        {{ a.percentage }}%
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 12px 14px; color: #475569; max-width: 250px;">
+                                {{ a.weak_topics or 'None' }}
+                            </td>
+                            <td style="padding: 12px 14px; text-align: right;">
+                                <a href="/mock_test_result/{{ a.id }}" class="quick-action-btn" style="font-size: 11px; padding: 6px 12px; background: #ffffff; color: var(--primary-blue); border: 1px solid var(--border-color);">
+                                    View Scorecard →
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                <div style="font-size: 40px; margin-bottom: 10px;">📊</div>
+                <div style="font-size: 15px; font-weight: 600; color: var(--text-dark);">No Test Evaluations Recorded Yet</div>
+                <p style="font-size: 13px; margin-top: 4px;">
+                    Take a mock test or AI quiz to start plotting your performance charts!
+                </p>
+                <div style="margin-top: 16px;">
+                    <a href="/mock_test" class="quick-action-btn">
+                        🚀 Take Your First Mock Test
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const chartDates = {{ chart_dates|safe }};
+    const chartScores = {{ chart_scores|safe }};
+    const topicNames = {{ topic_names|safe }};
+    const topicCounts = {{ topic_counts|safe }};
+
+    // 1. Line Chart: Score Progress Over Time
+    const scoreCtx = document.getElementById('scoreTrendChart');
+    if (scoreCtx && chartDates.length > 0) {
+        new Chart(scoreCtx, {
+            type: 'line',
+            data: {
+                labels: chartDates,
+                datasets: [{
+                    label: 'Score Percentage (%)',
+                    data: chartScores,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#2563eb',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ' Score: ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            callback: function(val) { return val + '%'; }
+                        },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Bar Chart: Priority Revision Topics
+    const weakCtx = document.getElementById('weakTopicsChart');
+    if (weakCtx && topicNames.length > 0) {
+        new Chart(weakCtx, {
+            type: 'bar',
+            data: {
+                labels: topicNames,
+                datasets: [{
+                    label: 'Questions Missed',
+                    data: topicCounts,
+                    backgroundColor: '#ef4444',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    } else if (weakCtx) {
+        weakCtx.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#16a34a;font-size:14px;font-weight:600;">🎉 No missed topics recorded! Excellent accuracy!</div>';
+    }
+</script>
+{% endblock %}

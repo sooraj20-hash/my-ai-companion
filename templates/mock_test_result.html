@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Examination Scorecard - AI Study Companion{% endblock %}
+{% block page_title %}Examination Result & Performance Breakdown{% endblock %}
+{% block page_subtitle %}Comprehensive scorecard, automated grading, and question-by-question AI examiner review.{% endblock %}
+
+{% block content %}
+<div class="result-wrapper" style="max-width: 950px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Score Summary Banner Card -->
+    <div class="dashboard-card" style="padding: 36px 30px; text-align: center; background: linear-gradient(135deg, #ffffff, #eff6ff); border: 2px solid #bfdbfe;">
+        
+        <div style="font-size: 48px; margin-bottom: 8px;">
+            {% if attempt.percentage >= 70 %}🏆{% elif attempt.percentage >= 50 %}👍{% else %}💡{% endif %}
+        </div>
+
+        <h1 style="font-size: 32px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px;">
+            Score: <span style="color: var(--primary-blue);">{{ attempt.score }}</span> / {{ attempt.total }}
+        </h1>
+
+        <div style="font-size: 20px; font-weight: 700; color: {% if attempt.percentage >= 70 %}#16a34a{% elif attempt.percentage >= 50 %}#2563eb{% else %}#dc2626{% endif %}; margin-bottom: 12px;">
+            {{ attempt.percentage }}% — 
+            {% if attempt.percentage >= 75 %}
+                First Class with Distinction
+            {% elif attempt.percentage >= 60 %}
+                First Class
+            {% elif attempt.percentage >= 40 %}
+                Second Class (Pass)
+            {% else %}
+                Needs Revision
+            {% endif %}
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 16px; font-size: 13px; color: var(--text-muted);">
+            <div>📋 Exam Pattern: <strong>{{ attempt.test_type }}</strong></div>
+            <div>⏱️ Time Taken: <strong>{{ attempt.time_taken_seconds // 60 }}m {{ attempt.time_taken_seconds % 60 }}s</strong></div>
+            <div>📅 Completed: <strong>{{ attempt.created_at }}</strong></div>
+        </div>
+
+        <div style="margin-top: 24px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <a href="/mock_test" class="quick-action-btn" style="font-size: 13px;">
+                🔄 Take Another Test
+            </a>
+            <a href="/analytics" class="quick-action-btn" style="background: #ffffff; color: var(--primary-blue); border: 1px solid var(--border-color); font-size: 13px;">
+                📈 View Performance Charts
+            </a>
+            <a href="/doubts" class="quick-action-btn" style="background: #ffffff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 13px;">
+                💬 Ask Doubts on Weak Topics
+            </a>
+        </div>
+    </div>
+
+    <!-- Strong & Weak Topics Diagnostic -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        
+        <!-- Strong Topics -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <h3 class="dashboard-card-title" style="color: #166534;">
+                <span>✅ Strong Topics Mastered</span>
+            </h3>
+            {% if strong_topics %}
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% for st in strong_topics %}
+                    <span style="background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600;">
+                        ✓ {{ st }}
+                    </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="font-size: 13px; color: var(--text-muted);">
+                    Keep practicing to establish high-confidence strong topics!
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Weak Topics / Revision Needed -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <h3 class="dashboard-card-title" style="color: #991b1b;">
+                <span>⚠️ Topics Needing Revision</span>
+            </h3>
+            {% if weak_topics %}
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% for wt in weak_topics %}
+                    <span style="background: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600;">
+                        📌 {{ wt }}
+                    </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="font-size: 13px; color: #16a34a; font-weight: 600;">
+                    🎉 Zero weak topics! You answered all questions correctly in this test!
+                </p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Detailed Question by Question Review -->
+    <div class="dashboard-card">
+        <h3 class="dashboard-card-title">📝 Comprehensive Examiner Breakdown</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
+            Review your answers, correct solutions, marks awarded, and Gemini's technical feedback.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            {% for item in details %}
+            <div style="border: 1px solid var(--border-color); border-left: 4px solid {% if item.marks_awarded == item.max_marks %}#16a34a{% elif item.marks_awarded > 0 %}#f59e0b{% else %}#ef4444{% endif %}; border-radius: 10px; padding: 20px; background: #ffffff;">
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 700; font-size: 14px; color: var(--text-dark);">
+                            Question {{ loop.index }}
+                        </span>
+                        <span style="background: #f1f5f9; color: var(--text-muted); padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                            {{ item.type }}
+                        </span>
+                        <span style="background: #eff6ff; color: var(--primary-blue); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                            {{ item.topic }}
+                        </span>
+                    </div>
+
+                    <div style="font-weight: 700; font-size: 13px; color: {% if item.marks_awarded == item.max_marks %}#16a34a{% elif item.marks_awarded > 0 %}#d97706{% else %}#dc2626{% endif %};">
+                        Marks: {{ item.marks_awarded }} / {{ item.max_marks }}
+                    </div>
+                </div>
+
+                <div style="font-size: 15px; font-weight: 600; color: var(--text-dark); margin-bottom: 16px; line-height: 1.5;">
+                    {{ item.question }}
+                </div>
+
+                <!-- Student Answer vs Model Answer Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                    <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 16px;">
+                        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+                            Your Answer
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-dark); font-weight: 500; white-space: pre-wrap;">
+                            {{ item.student_answer }}
+                        </div>
+                    </div>
+
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; margin-bottom: 4px;">
+                            Correct / Model Answer
+                        </div>
+                        <div style="font-size: 13px; color: #14532d; font-weight: 600; white-space: pre-wrap;">
+                            {{ item.correct_answer }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Examiner Feedback -->
+                <div style="background: #f8fafc; border-left: 3px solid var(--primary-blue); padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 12px; color: #334155; line-height: 1.5;">
+                    💡 <strong>Examiner Feedback:</strong> {{ item.feedback }}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

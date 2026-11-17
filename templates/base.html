@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Study Companion{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Main Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="dashboard-body">
+
+    <!-- Mobile Header / Hamburger Toggle -->
+    <div class="mobile-top-header">
+        <button id="mobileMenuBtn" class="hamburger-btn" aria-label="Toggle navigation">
+            ☰
+        </button>
+        <div class="brand-title-mobile">
+            🎓 AI Study Companion
+        </div>
+        <div class="user-avatar-mobile">
+            {{ session.get('user_name', 'Student')[0]|upper }}
+        </div>
+    </div>
+
+    <!-- Main Application Wrapper -->
+    <div class="app-layout">
+        
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo">🎓</div>
+                <div class="brand-info">
+                    <span class="brand-name">Study Companion</span>
+                    <span class="brand-tag">Engineering AI</span>
+                </div>
+            </div>
+
+            <!-- User Quick Card -->
+            <div class="sidebar-user-card">
+                <div class="user-avatar">
+                    {{ session.get('user_name', 'Student')[0]|upper }}
+                </div>
+                <div class="user-details">
+                    <div class="user-name">{{ session.get('user_name', 'Student') }}</div>
+                    <div class="user-role"><span class="status-indicator"></span> B.Tech Student</div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">CORE LEARNING</div>
+                
+                <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+
+                <a href="/upload" class="nav-link {% if request.path == '/upload' %}active{% endif %}">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-text">Upload & Notes</span>
+                </a>
+
+                <a href="/doubts" class="nav-link {% if request.path == '/doubts' %}active{% endif %}">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-text">AI Doubt Solver</span>
+                    <span class="badge new-badge">New</span>
+                </a>
+
+                <a href="/planner" class="nav-link {% if request.path == '/planner' %}active{% endif %}">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">Study Planner</span>
+                </a>
+
+                <a href="/mindmap" class="nav-link {% if request.path == '/mindmap' %}active{% endif %}">
+                    <span class="nav-icon">🧠</span>
+                    <span class="nav-text">Interactive Mind Map</span>
+                </a>
+
+                <div class="nav-section-title">TEST & REVISION</div>
+
+                <a href="/mock_test" class="nav-link {% if '/mock_test' in request.path %}active{% endif %}">
+                    <span class="nav-icon">🎓</span>
+                    <span class="nav-text">Mock Tests</span>
+                    <span class="badge new-badge">VTU/GATE</span>
+                </a>
+
+                <a href="/revisions" class="nav-link {% if request.path == '/revisions' %}active{% endif %}">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Smart Revisions</span>
+                </a>
+
+                <a href="/analytics" class="nav-link {% if request.path == '/analytics' %}active{% endif %}">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Performance Analysis</span>
+                </a>
+
+                <a href="/study_timer" class="nav-link {% if request.path == '/study_timer' %}active{% endif %}">
+                    <span class="nav-icon">⏱️</span>
+                    <span class="nav-text">Study Timer</span>
+                </a>
+
+                <div class="nav-divider"></div>
+
+                <a href="/logout" class="nav-link nav-logout">
+                    <span class="nav-icon">🚪</span>
+                    <span class="nav-text">Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Sidebar Overlay for Mobile -->
+        <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper">
+            
+            <!-- Topbar Header -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h2 class="page-title">{% block page_title %}Dashboard{% endblock %}</h2>
+                    <span class="page-subtitle">{% block page_subtitle %}Smart AI-powered engineering study workspace{% endblock %}</span>
+                </div>
+                <div class="topbar-right">
+                    <a href="/upload" class="quick-action-btn">
+                        <span>➕ Upload PDF</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Flashed Messages Container -->
+            <div class="flash-messages-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <span>{{ message }}</span>
+                                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Page Body Content -->
+            <main class="page-content">
+                {% block content %}{% endblock %}
+            </main>
+
+            <!-- Dashboard Footer -->
+            <footer class="app-footer">
+                <p>© 2026 AI Study Companion for Engineering Students • B.Tech Major Project</p>
+            </footer>
+
+        </div>
+    </div>
+
+    <!-- Interactive Navigation Scripts -->
+    <script>
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('active');
+        }
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', toggleSidebar);
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

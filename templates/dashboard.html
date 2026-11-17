@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - AI Study Companion{% endblock %}
+{% block page_title %}Engineering Command Dashboard{% endblock %}
+{% block page_subtitle %}Comprehensive academic overview, study streaks, spaced retention status, and exam readiness.{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper" style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Welcome Hero Card -->
+    <div class="dashboard-card" style="padding: 28px 32px; background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #ffffff; border: none; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <span style="background: rgba(255, 255, 255, 0.2); color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">
+                    🎓 B.TECH MAJOR PROJECT EDITION
+                </span>
+                <h1 style="font-size: 26px; font-weight: 700; margin: 10px 0 6px; color: #ffffff;">
+                    Welcome back, {{ user_name }}! 👋
+                </h1>
+                <p style="font-size: 14px; opacity: 0.9; max-width: 580px; margin: 0;">
+                    Your AI companion has organized your engineering notes, tracked your study streaks, and prepared your personalized revision queue.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="/upload" class="quick-action-btn" style="background: #ffffff; color: var(--primary-blue); font-size: 13px; font-weight: 700;">
+                    ➕ Upload PDF
+                </a>
+                <a href="/mock_test" class="quick-action-btn" style="background: #10b981; color: #ffffff; font-size: 13px; font-weight: 700;">
+                    🚀 Take Mock Test
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core 6-Metric KPI Grid -->
+    <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+        
+        <!-- Total Study Time -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Total Study Time</span>
+                <span class="metric-icon">⏱️</span>
+            </div>
+            <div id="total-time-val" class="metric-value">{{ total_time_str }}</div>
+            <div class="metric-subtext">Logged focus time</div>
+        </div>
+
+        <!-- Study Sessions -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Sessions</span>
+                <span class="metric-icon">📚</span>
+            </div>
+            <div id="sessions-count-val" class="metric-value">{{ study_sessions_count }}</div>
+            <div class="metric-subtext">Focus blocks logged</div>
+        </div>
+
+        <!-- Study Streak -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Study Streak</span>
+                <span class="metric-icon">🔥</span>
+            </div>
+            <div class="metric-value" style="color: #ea580c;">{{ streak }} Day{% if streak != 1 %}s{% endif %}</div>
+            <div class="metric-subtext">Consecutive active days</div>
+        </div>
+
+        <!-- Quiz Performance Average -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Average Score</span>
+                <span class="metric-icon">🧠</span>
+            </div>
+            <div class="metric-value" style="color: var(--primary-blue);">{{ avg_score }}%</div>
+            <div class="metric-subtext">{{ total_tests }} tests completed</div>
+        </div>
+
+        <!-- Pending Revisions -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Pending Revisions</span>
+                <span class="metric-icon">🔄</span>
+            </div>
+            <div class="metric-value" style="color: {% if due_revisions_count > 0 %}#dc2626{% else %}#16a34a{% endif %};">
+                {{ due_revisions_count }}
+            </div>
+            <div class="metric-subtext">Cards due today</div>
+        </div>
+
+        <!-- Syllabus Completion -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Syllabus Progress</span>
+                <span class="metric-icon">🎯</span>
+            </div>
+            <div class="metric-value" style="color: #16a34a;">{{ syllabus_pct }}%</div>
+            <div class="metric-subtext">{{ completed_plans }}/{{ total_plans }} topics done</div>
+        </div>
+
+    </div>
+
+    <!-- Middle Row: Daily Goal & Weekly Progress Chart -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        
+        <!-- Daily Study Goal Card -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h3 class="dashboard-card-title" style="margin-bottom: 0;">🎯 Today's Study Target</h3>
+                <span style="font-size: 12px; font-weight: 700; color: var(--primary-blue);">
+                    {{ today_mins }} / {{ daily_goal_mins }} mins
+                </span>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                Aim for 60 minutes of focused engineering review every day.
+            </p>
+
+            <div class="progress-track" style="height: 14px;">
+                <div class="progress-bar-fill" style="width: {{ daily_goal_pct }}%;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+                <span>{{ daily_goal_pct }}% of daily goal reached</span>
+                <a href="/study_timer" style="color: var(--primary-blue); font-weight: 600; text-decoration: none;">
+                    Open Focus Timer →
+                </a>
+            </div>
+
+            {% if due_revisions_count > 0 %}
+            <div style="margin-top: 18px; padding: 12px 16px; background: #fff1f2; border: 1px solid #ffe4e6; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="font-size: 12px; color: #9f1239; font-weight: 600;">
+                    ⏰ <strong>Action Required:</strong> {{ due_revisions_count }} flashcard(s) due for spaced review today!
+                </div>
+                <a href="/revisions" class="quick-action-btn" style="font-size: 11px; padding: 5px 12px; background: #dc2626;">
+                    Review Now
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Weekly Progress Bar Chart (Chart.js) -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h3 class="dashboard-card-title" style="margin-bottom: 0;">📅 Weekly Study Activity</h3>
+                <span style="font-size: 11px; color: var(--text-muted); background: #f1f5f9; padding: 3px 8px; border-radius: 4px;">
+                    Last 7 Days (Minutes)
+                </span>
+            </div>
+            <div style="position: relative; height: 160px;">
+                <canvas id="weeklyActivityChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Diagnostic Topics Section: Strong vs Weak Topics -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        
+        <!-- Strong Topics Mastered -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h3 class="dashboard-card-title" style="color: #166534; margin-bottom: 0;">
+                    ✅ High-Mastery Concepts
+                </h3>
+                <span style="font-size: 11px; color: #166534; background: #dcfce7; padding: 3px 8px; border-radius: 9999px; font-weight: 700;">
+                    High Accuracy
+                </span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                Topics where you consistently answered questions correctly during quizzes & mock tests.
+            </p>
+
+            {% if strong_topics %}
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% for st in strong_topics %}
+                    <span style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 600;">
+                        ✓ {{ st }}
+                    </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="font-size: 13px; color: var(--text-muted);">
+                    Take mock tests or AI quizzes to discover and verify your strongest modules!
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Priority Revision Weak Topics -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h3 class="dashboard-card-title" style="color: #991b1b; margin-bottom: 0;">
+                    ⚠️ Priority Revision Weak Topics
+                </h3>
+                <span style="font-size: 11px; color: #991b1b; background: #fee2e2; padding: 3px 8px; border-radius: 9999px; font-weight: 700;">
+                    Needs Review
+                </span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                Topics with missed exam questions. Prioritize these before university exams.
+            </p>
+
+            {% if weak_topics %}
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    {% for item in weak_topics %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; font-size: 13px;">
+                        <span style="font-weight: 600; color: #991b1b;">📌 {{ item[0] }}</span>
+                        <span style="font-size: 11px; background: #ffffff; color: #dc2626; padding: 2px 8px; border-radius: 9999px; font-weight: 700;">
+                            {{ item[1] }} missed
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="font-size: 13px; color: #16a34a; font-weight: 600;">
+                    🎉 Excellent! No weak topics detected across your recent evaluations.
+                </p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Quick Navigation Hub -->
+    <div class="dashboard-card">
+        <h3 class="dashboard-card-title">🚀 Complete Engineering Study Suite</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
+            Access all AI-powered study modules designed for your B.Tech major project.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <a href="/upload" style="text-decoration: none; padding: 18px; border: 1px solid var(--border-color); border-radius: 12px; background: #ffffff; display: flex; align-items: center; gap: 12px; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary-blue)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <span style="font-size: 28px;">📄</span>
+                <div>
+                    <div style="font-weight: 700; color: var(--text-dark); font-size: 14px;">Upload & Notes</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">PDF extraction & summaries</div>
+                </div>
+            </a>
+
+            <a href="/doubts" style="text-decoration: none; padding: 18px; border: 1px solid var(--border-color); border-radius: 12px; background: #ffffff; display: flex; align-items: center; gap: 12px; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary-blue)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <span style="font-size: 28px;">💬</span>
+                <div>
+                    <div style="font-weight: 700; color: var(--text-dark); font-size: 14px;">AI Doubt Solver</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Ask questions & follow-ups</div>
+                </div>
+            </a>
+
+            <a href="/planner" style="text-decoration: none; padding: 18px; border: 1px solid var(--border-color); border-radius: 12px; background: #ffffff; display: flex; align-items: center; gap: 12px; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary-blue)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <span style="font-size: 28px;">📅</span>
+                <div>
+                    <div style="font-weight: 700; color: var(--text-dark); font-size: 14px;">Study Planner</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Schedules & goals</div>
+                </div>
+            </a>
+
+            <a href="/mock_test" style="text-decoration: none; padding: 18px; border: 1px solid var(--border-color); border-radius: 12px; background: #ffffff; display: flex; align-items: center; gap: 12px; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary-blue)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <span style="font-size: 28px;">🎓</span>
+                <div>
+                    <div style="font-weight: 700; color: var(--text-dark); font-size: 14px;">Mock Tests</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">GATE & VTU timed tests</div>
+                </div>
+            </a>
+
+            <a href="/revisions" style="text-decoration: none; padding: 18px; border: 1px solid var(--border-color); border-radius: 12px; background: #ffffff; display: flex; align-items: center; gap: 12px; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary-blue)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <span style="font-size: 28px;">🔄</span>
+                <div>
+                    <div style="font-weight: 700; color: var(--text-dark); font-size: 14px;">Smart Revisions</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Spaced repetition cards</div>
+                </div>
+            </a>
+
+            <a href="/mindmap" style="text-decoration: none; padding: 18px; border: 1px solid var(--border-color); border-radius: 12px; background: #ffffff; display: flex; align-items: center; gap: 12px; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary-blue)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <span style="font-size: 28px;">🧠</span>
+                <div>
+                    <div style="font-weight: 700; color: var(--text-dark); font-size: 14px;">Interactive Mind Map</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Visual collapsible trees</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // 1. Weekly Activity Bar Chart
+    const weeklyLabels = {{ weekly_labels|safe }};
+    const weeklyMins = {{ weekly_mins|safe }};
+
+    const ctx = document.getElementById('weeklyActivityChart');
+    if (ctx && weeklyLabels.length > 0) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: weeklyLabels,
+                datasets: [{
+                    label: 'Study Minutes',
+                    data: weeklyMins,
+                    backgroundColor: '#2563eb',
+                    borderRadius: 6,
+                    hoverBackgroundColor: '#1d4ed8'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(c) { return ' ' + c.parsed.y + ' minutes'; }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 15 },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Client-side localStorage fallback sync
+    let savedSecs = parseInt(localStorage.getItem("studyTime") || "0");
+    let currentTotalSec = {{ total_seconds }};
+    if (savedSecs > currentTotalSec && currentTotalSec === 0) {
+        let hrs = Math.floor(savedSecs / 3600);
+        let mins = Math.floor((savedSecs % 3600) / 60);
+        document.getElementById("total-time-val").innerText =
+            String(hrs).padStart(2, "0") + "h " + String(mins).padStart(2, "0") + "m";
+        let localSessions = localStorage.getItem("studySessions");
+        if (localSessions) {
+            document.getElementById("sessions-count-val").innerText = localSessions;
+        }
+    }
+</script>
+{% endblock %}

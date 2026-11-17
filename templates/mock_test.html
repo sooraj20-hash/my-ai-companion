@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Mock Test System - AI Study Companion{% endblock %}
+{% block page_title %}Advanced Engineering Mock Test System{% endblock %}
+{% block page_subtitle %}Simulate VTU university exams and GATE competitive examinations with live countdown timer and automated AI evaluation.{% endblock %}
+
+{% block content %}
+<div class="mock-test-wrapper" style="max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Exam Configuration Card -->
+    <div class="dashboard-card" style="padding: 36px 30px; border-top: 4px solid var(--primary-blue);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+            <div>
+                <h2 style="font-size: 22px; color: var(--text-dark); margin-bottom: 4px;">🎯 Configure New Mock Examination</h2>
+                <p style="color: var(--text-muted); font-size: 13px;">
+                    Select your examination format, subject syllabus, and timed session duration.
+                </p>
+            </div>
+            {% if has_notes %}
+                <span style="background: #dcfce7; color: #166534; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 9999px;">
+                    📄 Grounded in Active Notes
+                </span>
+            {% else %}
+                <span style="background: #fef3c7; color: #92400e; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 9999px;">
+                    ⚠️ General Engineering Mode
+                </span>
+            {% endif %}
+        </div>
+
+        <form method="POST" action="/start_mock_test" style="display: flex; flex-direction: column; gap: 22px;">
+            
+            <!-- Subject Input -->
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-dark); margin-bottom: 6px;">
+                    Subject or Topic Focus
+                </label>
+                <input type="text" name="subject" placeholder="e.g. Computer Networks - OSI & TCP/IP or Compiler Design" required
+                       style="width: 100%; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px;">
+            </div>
+
+            <!-- Exam Format Selection Grid -->
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-dark); margin-bottom: 10px;">
+                    Select Examination Pattern
+                </label>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                    
+                    <label style="border: 2px solid var(--primary-blue); background: #eff6ff; padding: 20px; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <strong style="color: var(--primary-blue); font-size: 15px;">🎓 GATE Simulation</strong>
+                            <input type="radio" name="test_format" value="GATE MCQ Challenge" checked style="accent-color: var(--primary-blue);">
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-dark); font-weight: 600;">6 Analytical MCQs</div>
+                        <div style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">
+                            Competitive GATE pattern focusing on numerical and core conceptual problem solving.
+                        </div>
+                    </label>
+
+                    <label style="border: 1px solid var(--border-color); background: #ffffff; padding: 20px; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 8px;" onmouseover="this.style.borderColor='var(--primary-blue)'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='var(--border-color)'">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <strong style="color: #4338ca; font-size: 15px;">🏛️ VTU University Exam</strong>
+                            <input type="radio" name="test_format" value="VTU Examination Simulation" style="accent-color: var(--primary-blue);">
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-dark); font-weight: 600;">VTU 2 & 5 Marks + GATE</div>
+                        <div style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">
+                            University semester paper format with descriptive short answer and algorithm questions.
+                        </div>
+                    </label>
+
+                    <label style="border: 1px solid var(--border-color); background: #ffffff; padding: 20px; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 8px;" onmouseover="this.style.borderColor='var(--primary-blue)'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='var(--border-color)'">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <strong style="color: #059669; font-size: 15px;">⚡ Rapid Blitz Quiz</strong>
+                            <input type="radio" name="test_format" value="Rapid Quiz Blitz" style="accent-color: var(--primary-blue);">
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-dark); font-weight: 600;">5 Quick MCQs</div>
+                        <div style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">
+                            Fast concept validation before moving to the next engineering module.
+                        </div>
+                    </label>
+
+                </div>
+            </div>
+
+            <!-- Time Limit Selection -->
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-dark); margin-bottom: 6px;">
+                    Test Duration (Countdown Timer)
+                </label>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <label style="padding: 10px 18px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <input type="radio" name="duration_minutes" value="5"> 5 Minutes
+                    </label>
+                    <label style="padding: 10px 18px; border: 1px solid var(--primary-blue); background: #eff6ff; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--primary-blue); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <input type="radio" name="duration_minutes" value="10" checked> 10 Minutes
+                    </label>
+                    <label style="padding: 10px 18px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <input type="radio" name="duration_minutes" value="15"> 15 Minutes
+                    </label>
+                    <label style="padding: 10px 18px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <input type="radio" name="duration_minutes" value="20"> 20 Minutes
+                    </label>
+                </div>
+            </div>
+
+            <!-- Start Button with Loading Text -->
+            <button id="startTestBtn" type="submit" class="quick-action-btn" style="height: 48px; font-size: 16px; justify-content: center; margin-top: 10px;" onclick="this.innerHTML='⏳ Generating Paper with Gemini AI...'; this.style.opacity='0.7';">
+                🚀 Start Timed Mock Test Now
+            </button>
+
+        </form>
+    </div>
+
+    <!-- Past Mock Test Scorecards Table -->
+    <div class="dashboard-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <h3 class="dashboard-card-title" style="margin-bottom: 0;">📜 Recent Mock Test Scorecards</h3>
+            <a href="/analytics" style="font-size: 12px; font-weight: 600; color: var(--primary-blue); text-decoration: none;">
+                View Full Performance Graphs →
+            </a>
+        </div>
+
+        {% if past_attempts %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted); background: #f8fafc;">
+                            <th style="padding: 10px 12px;">Date</th>
+                            <th style="padding: 10px 12px;">Exam Pattern</th>
+                            <th style="padding: 10px 12px;">Score</th>
+                            <th style="padding: 10px 12px;">Percentage</th>
+                            <th style="padding: 10px 12px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in past_attempts %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 12px; color: var(--text-muted);">{{ a.created_at }}</td>
+                            <td style="padding: 12px; font-weight: 600; color: var(--text-dark);">{{ a.test_type }}</td>
+                            <td style="padding: 12px;">{{ a.score }} / {{ a.total }}</td>
+                            <td style="padding: 12px;">
+                                {% if a.percentage >= 70 %}
+                                    <span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 9999px; font-weight: 600;">
+                                        {{ a.percentage }}%
+                                    </span>
+                                {% elif a.percentage >= 40 %}
+                                    <span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 9999px; font-weight: 600;">
+                                        {{ a.percentage }}%
+                                    </span>
+                                {% else %}
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 9999px; font-weight: 600;">
+                                        {{ a.percentage }}%
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 12px; text-align: right;">
+                                <a href="/mock_test_result/{{ a.id }}" class="quick-action-btn" style="font-size: 11px; padding: 5px 12px; background: #ffffff; color: var(--primary-blue); border: 1px solid var(--border-color);">
+                                    Detailed Review →
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 13px;">
+                No mock test attempts recorded yet. Launch your first test above!
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

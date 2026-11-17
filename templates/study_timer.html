@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Study Timer</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .timer-container {
+            max-width: 600px;
+            margin: 70px auto;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .timer-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+        .timer {
+            font-size: 64px;
+            font-weight: bold;
+            margin: 30px 0;
+            color: #2563eb;
+        }
+
+        .timer-btn {
+            padding: 12px 25px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .timer-btn:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+        🎓 AI Study Companion
+    </div>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/upload">Upload Notes</a>
+    </nav>
+
+</header>
+
+<main class="timer-container">
+
+    <div class="timer-card">
+
+        <h1>⏱️ Study Timer</h1>
+
+        <p>Focus on your studies and track your study time.</p>
+
+        <div id="timer" class="timer">
+            00:00:00
+        </div>
+        <div id="session-status">
+            🟢 Study session active
+        </div>
+
+        <button class="timer-btn"
+                onclick="startTimer()">
+            ▶ Start
+        </button>
+
+        <button class="timer-btn"
+                onclick="pauseTimer()">
+            ⏸ Pause
+        </button>
+
+        <button class="timer-btn"
+                onclick="resetTimer()">
+            🔄 Reset
+        </button>
+
+    </div>
+
+</main>
+
+<script>
+
+let seconds = 0;
+let timerInterval = null;
+let startTime = null;
+let pausedTime = 0;
+
+function updateTimer() {
+
+    let hours = Math.floor(seconds / 3600);
+
+    let minutes = Math.floor((seconds % 3600) / 60);
+
+    let secs = seconds % 60;
+
+    document.getElementById("timer").innerText =
+        String(hours).padStart(2, "0") + ":" +
+        String(minutes).padStart(2, "0") + ":" +
+        String(secs).padStart(2, "0");
+}
+
+
+function startTimer() {
+
+    if (timerInterval !== null) {
+        return;
+    }
+
+    startTime = Date.now() - (pausedTime * 1000);
+    let sessions =
+    parseInt(localStorage.getItem("studySessions") || "0");
+
+sessions++;
+
+localStorage.setItem(
+    "studySessions",
+    sessions
+);
+
+    document.getElementById("session-status").innerText =
+        "🟢 Study session active";
+
+    timerInterval = setInterval(function() {
+
+        seconds = Math.floor(
+            (Date.now() - startTime) / 1000
+        );
+        localStorage.setItem("studyTime",seconds);
+
+        updateTimer();
+
+    }, 500);
+}
+
+
+function pauseTimer() {
+
+    if (timerInterval === null) {
+        return;
+    }
+
+    seconds = Math.floor(
+        (Date.now() - startTime) / 1000
+    );
+
+    pausedTime = seconds;
+    localStorage.setItem("studyTime",seconds);
+    let today = new Date().toISOString().split("T")[0];
+
+localStorage.setItem(
+    "study_" + today,
+    seconds
+);
+    clearInterval(timerInterval);
+
+    timerInterval = null;
+
+    updateTimer();
+
+    document.getElementById("session-status").innerText =
+        "🟡 Study session paused";
+}
+
+
+function resetTimer() {
+
+    clearInterval(timerInterval);
+
+    timerInterval = null;
+
+    seconds = 0;
+    pausedTime = 0;
+    startTime = null;
+    localStorage.removeItem("studyTime");
+    updateTimer();
+
+    document.getElementById("session-status").innerText =
+        "⚪ Timer reset";
+}
+window.onload = function() {
+
+    let savedTime = localStorage.getItem("studyTime");
+
+    if (savedTime) {
+        seconds = parseInt(savedTime);
+        pausedTime = seconds;
+        updateTimer();
+    }
+
+};
+
+</script>
+
+</body>
+</html>

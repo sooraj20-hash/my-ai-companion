@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Quiz</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .quiz-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .quiz-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .question-number {
+            color: #2563eb;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .question {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        .option {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8fafc;
+            text-align: left;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .option:hover {
+            background: #e0ecff;
+        }
+
+        .option.selected {
+            background: #dbeafe;
+            border-color: #2563eb;
+        }
+
+        .next-btn {
+            margin-top: 20px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .next-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .result {
+            display: none;
+            text-align: center;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="logo">
+        🎓 AI Study Companion
+    </div>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/upload">Upload Notes</a>
+    </nav>
+</header>
+
+
+<main class="quiz-container">
+
+    <div id="quiz">
+
+        {% for q in quiz %}
+
+        <div class="quiz-card question-card"
+             style="{% if not loop.first %}display:none;{% endif %}"
+             data-answer="{{ q.answer }}"
+             data-topic="{{ q.topic or 'General' }}">
+
+            <div class="question-number">
+                Question {{ loop.index }} of {{ quiz|length }}
+            </div>
+
+            <div class="question">
+                {{ q.question }}
+            </div>
+
+            <button class="option" onclick="selectAnswer(this, 'A')">
+                A) {{ q.options.A }}
+            </button>
+
+            <button class="option" onclick="selectAnswer(this, 'B')">
+                B) {{ q.options.B }}
+            </button>
+
+            <button class="option" onclick="selectAnswer(this, 'C')">
+                C) {{ q.options.C }}
+            </button>
+
+            <button class="option" onclick="selectAnswer(this, 'D')">
+                D) {{ q.options.D }}
+            </button>
+
+            <button class="next-btn"
+                    onclick="nextQuestion()">
+                {% if loop.last %}
+                    Finish Quiz
+                {% else %}
+                    Next Question →
+                {% endif %}
+            </button>
+
+            <div class="explanation"
+                 style="display:none;">
+                <strong>Explanation:</strong>
+                {{ q.explanation }}
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    <div id="result" class="quiz-card result">
+
+        <h1>🎉 Quiz Completed!</h1>
+
+        <h2>
+            Your Score:
+            <span id="score">0</span> / {{ quiz|length }}
+        </h2>
+
+        <br>
+
+        <a href="/upload" class="primary-btn">
+            Back to Study Notes
+        </a>
+
+    </div>
+
+</main>
+
+
+<script>
+
+let currentQuestion = 0;
+let score = 0;
+let selected = false;
+let weakTopics = [];
+
+const questions =
+    document.querySelectorAll(".question-card");
+
+function selectAnswer(button, answer) {
+
+    if (selected) {
+        return;
+    }
+
+    selected = true;
+
+    const question =
+        questions[currentQuestion];
+
+    const correctAnswer =
+        question.dataset.answer;
+
+    const options =
+        question.querySelectorAll(".option");
+
+    options.forEach(option => {
+        option.disabled = true;
+    });
+
+    if (answer === correctAnswer) {
+
+        button.style.background = "#dcfce7";
+        button.style.borderColor = "#16a34a";
+
+        score++;
+
+    } else {
+       const topic =
+    question.dataset.topic || "General";
+
+if (topic === "null" || topic === "None") {
+    weakTopics.push("General");
+} else {
+    weakTopics.push(topic);
+}
+        localStorage.setItem(
+    "weakTopics",
+    JSON.stringify(weakTopics)
+);
+        button.style.background = "#fee2e2";
+        button.style.borderColor = "#dc2626";
+
+        options.forEach(option => {
+
+            if (option.innerText.startsWith(correctAnswer + ")")) {
+                option.style.background = "#dcfce7";
+                option.style.borderColor = "#16a34a";
+            }
+
+        });
+    }
+
+    question.querySelector(".explanation")
+            .style.display = "block";
+}
+
+
+function nextQuestion() {
+
+    if (!selected) {
+        alert("Please select an answer first.");
+        return;
+    }
+
+    questions[currentQuestion]
+        .style.display = "none";
+
+    currentQuestion++;
+
+    if (currentQuestion < questions.length) {
+
+        questions[currentQuestion]
+            .style.display = "block";
+
+        selected = false;
+
+    } else {
+
+        document.getElementById("quiz")
+            .style.display = "none";
+
+        document.getElementById("result")
+            .style.display = "block";
+
+        document.getElementById("score")
+            .innerText = score;
+            localStorage.setItem(
+    "weakTopics",
+    JSON.stringify(weakTopics)
+);
+            localStorage.setItem(
+    "lastQuizScore",
+    score
+);
+
+        localStorage.setItem(
+            "lastQuizTotal",
+            questions.length
+        );
+
+        // Auto-save attempt to SQLite for AI Performance Analytics
+        fetch('/save_quiz_score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                score: score,
+                total: questions.length,
+                weak_topics: weakTopics
+            })
+        }).catch(err => console.error('Error recording quiz score:', err));
+    }
+}
+
+</script>
+
+</body>
+</html>

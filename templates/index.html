@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Study Companion</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <header class="navbar">
+
+        <div class="logo">
+            🎓 AI Study Companion
+        </div>
+
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">Features</a>
+            <a href="#">About</a>
+            <button class="login-btn" onclick="window.location.href='/login'">
+    Login
+</button>
+        </nav>
+
+    </header>
+
+
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <h1>
+                Study Smarter with
+                <span>Artificial Intelligence</span>
+            </h1>
+
+            <p>
+                Your personalized AI study companion for
+                engineering education.
+            </p>
+
+            <div class="buttons">
+
+               <a href="/upload" class="primary-btn">Start Studying</a>
+
+                <button class="secondary-btn">
+                    Explore Features
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="features">
+
+        <h2>Everything You Need to Study Better</h2>
+
+        <div class="feature-grid">
+
+            <div class="card">
+                <div class="icon">📄</div>
+                <h3>PDF Summarizer</h3>
+                <p>
+                    Upload your notes and get
+                    easy-to-understand summaries.
+                </p>
+            </div>
+
+
+            <div class="card">
+                <div class="icon">💬</div>
+                <h3>Ask Your Notes</h3>
+                <p>
+                    Ask questions and get answers
+                    from your uploaded study material.
+                </p>
+            </div>
+
+
+            <div class="card">
+                <div class="icon">📝</div>
+                <h3>AI Quiz Generator</h3>
+                <p>
+                    Automatically create quizzes
+                    from your study materials.
+                </p>
+            </div>
+
+
+            <div class="card">
+                <div class="icon">🧠</div>
+                <h3>Smart Flashcards</h3>
+                <p>
+                    Turn important concepts into
+                    useful revision flashcards.
+                </p>
+            </div>
+
+
+            <div class="card">
+                <div class="icon">🗺️</div>
+                <h3>Mind Maps</h3>
+                <p>
+                    Visualize complex engineering
+                    topics with AI-generated mind maps.
+                </p>
+            </div>
+
+
+            <div class="card">
+                <div class="icon">📊</div>
+                <h3>Weak Topic Analysis</h3>
+                <p>
+                    Identify your weak subjects and
+                    receive personalized recommendations.
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <footer>
+
+        <p>
+            AI Study Companion © 2026
+        </p>
+
+        <p>
+            Built for Engineering Students
+        </p>
+
+    </footer>
+
+</body>
+
+</html>

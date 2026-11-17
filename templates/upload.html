@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Study Notes - AI Study Companion{% endblock %}
+{% block page_title %}Upload & Process Study Notes{% endblock %}
+{% block page_subtitle %}Upload your engineering PDF to extract text, generate AI summaries, quizzes, flashcards and mind maps.{% endblock %}
+
+{% block content %}
+<div class="upload-wrapper" style="max-width: 1000px; margin: 0 auto;">
+
+    <!-- PDF Upload Card -->
+    <div class="dashboard-card" style="text-align: center; padding: 40px 24px;">
+        <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
+        <h2 style="font-size: 22px; margin-bottom: 8px;">Upload Engineering Study Notes</h2>
+        <p style="color: var(--text-muted); font-size: 14px; max-width: 500px; margin: 0 auto 24px;">
+            Supports lecture slides, textbook modules, lab manuals, and syllabus notes in PDF format.
+        </p>
+
+        <form method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+            <input type="file" name="pdf" accept=".pdf" required
+                   style="padding: 12px 16px; border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; cursor: pointer; max-width: 400px; width: 100%;">
+            
+            <button type="submit" class="quick-action-btn" style="font-size: 15px; padding: 12px 28px;">
+                ⚡ Upload & Extract Study Material
+            </button>
+        </form>
+    </div>
+
+    <!-- AI Study Summary Section -->
+    {% if summary %}
+    <div class="dashboard-card" style="border-left: 4px solid var(--primary-blue);">
+        <h3 class="dashboard-card-title">🤖 AI Engineering Summary</h3>
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; padding: 24px; line-height: 1.7; white-space: pre-wrap; font-size: 14px; color: #1e293b;">
+{{ summary }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Toolset Available when Notes are Loaded -->
+    {% if extracted_text or summary %}
+    <div class="dashboard-card">
+        <h3 class="dashboard-card-title">🧠 AI Study Tools for this Document</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
+            Choose an AI generation tool to analyze and test yourself on these notes.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+            <form method="POST" action="/generate_quiz">
+                <button type="submit" class="metric-card" style="width: 100%; border: 1px solid var(--border-color); cursor: pointer; text-align: left; background: #ffffff;">
+                    <span style="font-size: 28px; margin-bottom: 8px;">🧠</span>
+                    <strong style="color: var(--text-dark); font-size: 14px;">Generate AI Quiz</strong>
+                    <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">5 MCQs with explanations</span>
+                </button>
+            </form>
+
+            <form method="POST" action="/generate_flashcards">
+                <button type="submit" class="metric-card" style="width: 100%; border: 1px solid var(--border-color); cursor: pointer; text-align: left; background: #ffffff;">
+                    <span style="font-size: 28px; margin-bottom: 8px;">📚</span>
+                    <strong style="color: var(--text-dark); font-size: 14px;">Generate Flashcards</strong>
+                    <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Key concept Q&As</span>
+                </button>
+            </form>
+
+            <form method="POST" action="/generate_mindmap">
+                <button type="submit" class="metric-card" style="width: 100%; border: 1px solid var(--border-color); cursor: pointer; text-align: left; background: #ffffff;">
+                    <span style="font-size: 28px; margin-bottom: 8px;">🗺️</span>
+                    <strong style="color: var(--text-dark); font-size: 14px;">Generate Mind Map</strong>
+                    <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Topics & subtopics hierarchy</span>
+                </button>
+            </form>
+
+            <form method="POST" action="/generate_questions">
+                <button type="submit" class="metric-card" style="width: 100%; border: 1px solid var(--border-color); cursor: pointer; text-align: left; background: #ffffff;">
+                    <span style="font-size: 28px; margin-bottom: 8px;">🎓</span>
+                    <strong style="color: var(--text-dark); font-size: 14px;">VTU & GATE Questions</strong>
+                    <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">2, 5, 10 marks & GATE MCQs</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Extracted Raw Text Preview -->
+    {% if extracted_text %}
+    <div class="dashboard-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 class="dashboard-card-title" style="margin-bottom: 0;">📝 Extracted Text Preview</h3>
+            <span style="font-size: 12px; color: var(--text-muted);">{{ extracted_text|length }} characters extracted</span>
+        </div>
+        <div class="text-box" style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; max-height: 350px; overflow-y: auto; font-size: 13px; line-height: 1.6; white-space: pre-wrap;">
+{{ extracted_text }}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

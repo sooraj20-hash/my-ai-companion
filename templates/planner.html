@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}AI Study Planner - AI Study Companion{% endblock %}
+{% block page_title %}AI Engineering Study Planner{% endblock %}
+{% block page_subtitle %}Personalized study schedule, topic completion tracking, and AI-recommended study priority.{% endblock %}
+
+{% block content %}
+<div class="planner-wrapper" style="max-width: 1050px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Top Key Metrics Cards -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Total Topics</span>
+                <span class="metric-icon">📚</span>
+            </div>
+            <div class="metric-value">{{ total_plans }}</div>
+            <div class="metric-subtext">Planned study targets</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Completed</span>
+                <span class="metric-icon">✅</span>
+            </div>
+            <div class="metric-value" style="color: #16a34a;">{{ completed_plans }}</div>
+            <div class="metric-subtext">Topics mastered</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Pending</span>
+                <span class="metric-icon">⏳</span>
+            </div>
+            <div class="metric-value" style="color: #d97706;">{{ pending_plans }}</div>
+            <div class="metric-subtext">Topics in progress</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Syllabus Progress</span>
+                <span class="metric-icon">🎯</span>
+            </div>
+            <div class="metric-value">{{ progress_pct }}%</div>
+            <div class="progress-track">
+                <div class="progress-bar-fill" style="width: {{ progress_pct }}%;"></div>
+            </div>
+            <div class="metric-subtext">{{ completed_plans }} of {{ total_plans }} completed</div>
+        </div>
+    </div>
+
+    <!-- AI Next Topic Recommendation Card -->
+    <div class="dashboard-card" style="border-left: 4px solid var(--primary-blue); background: linear-gradient(135deg, #ffffff, #eff6ff);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; margin-bottom: 10px;">
+                    <span>🤖 AI SMART RECOMMENDATION</span>
+                </div>
+
+                {% if next_topic %}
+                    <h3 style="font-size: 18px; color: var(--text-dark); margin-bottom: 6px;">
+                        Recommended Next: <span style="color: var(--primary-blue);">{{ next_topic.topic }}</span>
+                    </h3>
+                    <p style="font-size: 13px; color: #475569; margin-bottom: 10px;">
+                        Subject: <strong>{{ next_topic.subject }}</strong> • Due Target: <strong>{{ next_topic.target_date }}</strong> • Estimated: <strong>{{ next_topic.estimated_hours }} hrs</strong>
+                    </p>
+                    <div style="font-size: 12px; color: #64748b;">
+                        💡 <em>Tip: Prioritized based on {{ next_topic.priority }} priority and closest target deadline.</em>
+                    </div>
+                {% else %}
+                    <h3 style="font-size: 17px; color: var(--text-dark); margin-bottom: 4px;">
+                        🎉 All Scheduled Goals Completed!
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-muted);">
+                        You have finished all pending topics. Add new topics below or generate an automated AI study schedule!
+                    </p>
+                {% endif %}
+
+                {% if weak_areas %}
+                <div style="margin-top: 12px; padding: 8px 12px; background: #fff1f2; border: 1px solid #ffe4e6; border-radius: 8px; font-size: 12px; color: #9f1239;">
+                    ⚠️ <strong>Quiz Revision Warning:</strong> You recently missed questions in: <em>{{ weak_areas|join(', ') }}</em>. Consider scheduling these!
+                </div>
+                {% endif %}
+            </div>
+
+            {% if next_topic %}
+            <div>
+                <form method="POST" action="/toggle_plan_status/{{ next_topic.id }}" style="margin: 0;">
+                    <button type="submit" class="quick-action-btn" style="background: #16a34a; font-size: 13px;">
+                        ✓ Mark Topic Completed
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add Goal & AI Schedule Generator Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        
+        <!-- Box 1: Quick Add Single Goal -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <h3 class="dashboard-card-title">📝 Add Topic Target</h3>
+            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">
+                Manually enter an engineering subject and topic you want to master.
+            </p>
+
+            <form method="POST" action="/add_plan" style="display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Subject</label>
+                    <input type="text" name="subject" placeholder="e.g. Operating Systems, DBMS" required
+                           style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Topic</label>
+                    <input type="text" name="topic" placeholder="e.g. CPU Scheduling Algorithms" required
+                           style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Target Date</label>
+                        <input type="date" name="target_date" value="{{ today_str }}" required
+                               style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Priority</label>
+                        <select name="priority" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: white;">
+                            <option value="High">🔴 High Priority</option>
+                            <option value="Medium" selected>🔵 Medium Priority</option>
+                            <option value="Low">⚪ Low Priority</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Estimated Study Hours</label>
+                    <input type="number" name="estimated_hours" value="2" min="1" max="12"
+                           style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;">
+                </div>
+
+                <button type="submit" class="quick-action-btn" style="width: 100%; justify-content: center; height: 42px;">
+                    ➕ Add to Study Plan
+                </button>
+            </form>
+        </div>
+
+        <!-- Box 2: ⚡ AI Study Schedule Generator -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <h3 class="dashboard-card-title" style="margin-bottom: 0;">⚡ AI Schedule Generator</h3>
+                <span class="badge new-badge">Gemini AI</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">
+                Let Gemini draft a progressive day-by-day study timetable based on your syllabus.
+            </p>
+
+            <form id="aiScheduleForm" onsubmit="generateAISchedule(event)" style="display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Engineering Subject</label>
+                    <input type="text" id="aiSubject" placeholder="e.g. Computer Networks or Compiler Design" required
+                           style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Timeline</label>
+                        <select id="aiDays" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: white;">
+                            <option value="3">3 Days Crash</option>
+                            <option value="5">5 Days Plan</option>
+                            <option value="7" selected>7 Days (1 Week)</option>
+                            <option value="14">14 Days (2 Weeks)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Hours / Day</label>
+                        <select id="aiDailyHours" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: white;">
+                            <option value="1">1 hour</option>
+                            <option value="2" selected>2 hours</option>
+                            <option value="3">3 hours</option>
+                            <option value="4">4+ hours</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="aiGenBtn" type="submit" class="quick-action-btn" style="width: 100%; justify-content: center; height: 42px; background: #4f46e5;">
+                    <span id="aiBtnIcon">🤖</span>
+                    <span id="aiBtnText">Generate Smart Schedule</span>
+                </button>
+            </form>
+
+            <!-- AI Generated Schedule Preview Container -->
+            <div id="aiSchedulePreview" style="display: none; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <strong style="font-size: 13px; color: var(--text-dark);">Generated Plan Preview</strong>
+                    <button type="button" onclick="importAllPlans()" class="quick-action-btn" style="font-size: 11px; padding: 6px 12px; background: #16a34a;">
+                        📥 Import All to Planner
+                    </button>
+                </div>
+                <div id="aiScheduleList" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scheduled Goals Table -->
+    <div class="dashboard-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
+            <h3 class="dashboard-card-title" style="margin-bottom: 0;">📋 Your Study Goals & Schedule</h3>
+            
+            <!-- Filter Pills -->
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="filter-btn active" onclick="filterPlans('all', this)">All ({{ total_plans }})</button>
+                <button type="button" class="filter-btn" onclick="filterPlans('pending', this)">Pending ({{ pending_plans }})</button>
+                <button type="button" class="filter-btn" onclick="filterPlans('completed', this)">Completed ({{ completed_plans }})</button>
+            </div>
+        </div>
+
+        {% if plans %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted); background: #f8fafc;">
+                            <th style="padding: 12px 14px; width: 50px;">Status</th>
+                            <th style="padding: 12px 14px;">Subject</th>
+                            <th style="padding: 12px 14px;">Topic</th>
+                            <th style="padding: 12px 14px;">Priority</th>
+                            <th style="padding: 12px 14px;">Target Date</th>
+                            <th style="padding: 12px 14px;">Estimated</th>
+                            <th style="padding: 12px 14px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="plansTableBody">
+                        {% for p in plans %}
+                        <tr class="plan-row status-{{ p.status }}" style="border-bottom: 1px solid var(--border-color); {% if p.status == 'completed' %}background: #fcfdfc; opacity: 0.85;{% endif %}">
+                            
+                            <!-- Toggle Status Checkbox Button -->
+                            <td style="padding: 12px 14px;">
+                                <form method="POST" action="/toggle_plan_status/{{ p.id }}" style="margin: 0;">
+                                    <button type="submit" title="Click to toggle status" style="background: none; border: none; cursor: pointer; font-size: 18px;">
+                                        {% if p.status == 'completed' %}
+                                            <span style="color: #16a34a;">✅</span>
+                                        {% else %}
+                                            <span style="color: #cbd5e1;">⚪</span>
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            </td>
+
+                            <!-- Subject Badge -->
+                            <td style="padding: 12px 14px;">
+                                <span style="background: #eff6ff; color: var(--primary-blue); padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 12px;">
+                                    {{ p.subject }}
+                                </span>
+                            </td>
+
+                            <!-- Topic Name -->
+                            <td style="padding: 12px 14px;">
+                                <span style="{% if p.status == 'completed' %}text-decoration: line-through; color: #94a3b8;{% else %}font-weight: 600; color: var(--text-dark);{% endif %}">
+                                    {{ p.topic }}
+                                </span>
+                            </td>
+
+                            <!-- Priority Badge -->
+                            <td style="padding: 12px 14px;">
+                                {% if p.priority == 'High' %}
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">High</span>
+                                {% elif p.priority == 'Low' %}
+                                    <span style="background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">Low</span>
+                                {% else %}
+                                    <span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">Medium</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Target Date -->
+                            <td style="padding: 12px 14px;">
+                                {% if p.status == 'pending' and p.target_date and p.target_date < today_str %}
+                                    <span style="color: #dc2626; font-weight: 600;">⚠️ {{ p.target_date }} (Overdue)</span>
+                                {% elif p.status == 'pending' and p.target_date == today_str %}
+                                    <span style="color: #d97706; font-weight: 600;">📅 Today</span>
+                                {% else %}
+                                    <span style="color: var(--text-muted);">{{ p.target_date or '-' }}</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Estimated Hours -->
+                            <td style="padding: 12px 14px; color: var(--text-muted);">
+                                {{ p.estimated_hours or 2 }} hrs
+                            </td>
+
+                            <!-- Delete Action -->
+                            <td style="padding: 12px 14px; text-align: right;">
+                                <form method="POST" action="/delete_plan/{{ p.id }}" onsubmit="return confirm('Delete this study goal?');" style="margin: 0; display: inline;">
+                                    <button type="submit" title="Delete goal" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 15px; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                <div style="font-size: 40px; margin-bottom: 10px;">📅</div>
+                <div style="font-size: 15px; font-weight: 600; color: var(--text-dark);">No Study Goals Scheduled Yet</div>
+                <p style="font-size: 13px; margin-top: 4px;">
+                    Use the manual form above or let Gemini generate an automated study timetable for you!
+                </p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.filter-btn {
+    background: #f1f5f9;
+    border: 1px solid var(--border-color);
+    color: #64748b;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.filter-btn.active, .filter-btn:hover {
+    background: #eff6ff;
+    color: var(--primary-blue);
+    border-color: #bfdbfe;
+}
+</style>
+
+<script>
+let lastGeneratedSchedule = [];
+let currentSubject = "";
+
+function filterPlans(status, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const rows = document.querySelectorAll('.plan-row');
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else if (row.classList.contains('status-' + status)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+async function generateAISchedule(e) {
+    e.preventDefault();
+    const subject = document.getElementById('aiSubject').value.trim();
+    const days = document.getElementById('aiDays').value;
+    const dailyHours = document.getElementById('aiDailyHours').value;
+    if (!subject) return;
+
+    currentSubject = subject;
+    const btn = document.getElementById('aiGenBtn');
+    const icon = document.getElementById('aiBtnIcon');
+    const text = document.getElementById('aiBtnText');
+
+    btn.disabled = true;
+    icon.innerText = '⏳';
+    text.innerText = 'Analyzing Syllabus & Generating...';
+
+    try {
+        const response = await fetch('/generate_ai_schedule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subject: subject, days: days, daily_hours: dailyHours })
+        });
+
+        const data = await response.json();
+        if (data.success && data.schedule) {
+            lastGeneratedSchedule = data.schedule;
+            renderSchedulePreview(data.schedule);
+        } else {
+            alert('Failed: ' + (data.error || 'Could not generate schedule.'));
+        }
+    } catch (err) {
+        alert('Network error while generating schedule.');
+    } finally {
+        btn.disabled = false;
+        icon.innerText = '🤖';
+        text.innerText = 'Generate Smart Schedule';
+    }
+}
+
+function renderSchedulePreview(schedule) {
+    const previewBox = document.getElementById('aiSchedulePreview');
+    const list = document.getElementById('aiScheduleList');
+    list.innerHTML = '';
+
+    schedule.forEach(item => {
+        const el = document.createElement('div');
+        el.style.cssText = 'background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; font-size: 12px;';
+        el.innerHTML = `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <strong style="color: var(--primary-blue);">Day ${item.day}: ${item.topic}</strong>
+                <span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px;">${item.estimated_hours} hrs</span>
+            </div>
+            <div style="color: #64748b; font-size: 11px;">💡 ${item.tip || 'Key concept mastery'}</div>
+        `;
+        list.appendChild(el);
+    });
+
+    previewBox.style.display = 'block';
+}
+
+async function importAllPlans() {
+    if (!lastGeneratedSchedule || lastGeneratedSchedule.length === 0) return;
+
+    try {
+        const response = await fetch('/bulk_add_plans', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject: currentSubject,
+                plans: lastGeneratedSchedule
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            alert(`🎉 Success! Added ${data.added_count} study goals to your planner.`);
+            window.location.reload();
+        } else {
+            alert('Error adding plans: ' + data.error);
+        }
+    } catch (err) {
+        alert('Network error while importing plans.');
+    }
+}
+</script>
+{% endblock %}

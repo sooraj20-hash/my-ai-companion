@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Revision System - AI Study Companion{% endblock %}
+{% block page_title %}Smart Spaced Repetition Revision System{% endblock %}
+{% block page_subtitle %}Scientifically scheduled flashcard reviews (1, 3, 7, 14-day intervals) to prevent memory decay before exams.{% endblock %}
+
+{% block content %}
+<div class="revisions-wrapper" style="max-width: 1050px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Top Key Metrics Cards -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Due Today</span>
+                <span class="metric-icon">⏰</span>
+            </div>
+            <div class="metric-value" style="color: {% if due_count > 0 %}#dc2626{% else %}#16a34a{% endif %};">
+                {{ due_count }}
+            </div>
+            <div class="metric-subtext">Cards awaiting review</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Upcoming</span>
+                <span class="metric-icon">📅</span>
+            </div>
+            <div class="metric-value" style="color: var(--primary-blue);">{{ upcoming_count }}</div>
+            <div class="metric-subtext">Scheduled future reviews</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Mastered</span>
+                <span class="metric-icon">🧠</span>
+            </div>
+            <div class="metric-value" style="color: #16a34a;">{{ mastered_count }}</div>
+            <div class="metric-subtext">Reviewed 3+ times</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-title">Total Deck</span>
+                <span class="metric-icon">📚</span>
+            </div>
+            <div class="metric-value">{{ total_cards }}</div>
+            <div class="metric-subtext">Active revision flashcards</div>
+        </div>
+    </div>
+
+    <!-- AI Spaced Repetition Advice Banner -->
+    <div class="dashboard-card" style="border-left: 4px solid var(--primary-blue); background: linear-gradient(135deg, #ffffff, #eff6ff);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; margin-bottom: 8px;">
+                    <span>🧠 EBBINGHAUS FORGETTING CURVE ENGINE</span>
+                </div>
+
+                {% if due_count > 0 %}
+                    <h3 style="font-size: 17px; color: var(--text-dark); margin-bottom: 4px;">
+                        You have <span style="color: #dc2626; font-weight: 700;">{{ due_count }}</span> flashcard(s) due for review today!
+                    </h3>
+                    <p style="font-size: 13px; color: #475569;">
+                        Reviewing these cards right now refreshes your memory pathways before natural forgetting occurs.
+                    </p>
+                {% else %}
+                    <h3 style="font-size: 17px; color: #16a34a; margin-bottom: 4px;">
+                        🎉 All Revisions for Today Completed!
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-muted);">
+                        Great work! Your memory retention is solid. Next cards will arrive according to your spaced schedule.
+                    </p>
+                {% endif %}
+
+                {% if recommended_topics %}
+                <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 12px; font-weight: 600; color: #991b1b;">⚠️ Target Weak Topics:</span>
+                    {% for wt in recommended_topics %}
+                    <button type="button" onclick="quickGenerate('{{ wt }}')" style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                        ⚡ Generate for {{ wt }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Review Player (If Cards Due) -->
+    {% if due_count > 0 %}
+    <div class="dashboard-card" style="padding: 36px 30px; text-align: center; border: 2px solid var(--border-color); background: #ffffff;">
+        
+        <div id="cardDeckContainer">
+            {% for c in due_cards %}
+            <div id="card_box_{{ c.id }}" class="review-card-item" style="display: {% if loop.first %}block{% else %}none{% endif %}; max-width: 650px; margin: 0 auto;">
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <span style="background: #eff6ff; color: var(--primary-blue); font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 9999px;">
+                        📌 {{ c.topic }}
+                    </span>
+                    <span style="font-size: 12px; color: var(--text-muted);">
+                        Card <span class="card-current-idx">{{ loop.index }}</span> of {{ due_count }} • Repetition: {{ c.repetition_count }}x
+                    </span>
+                </div>
+
+                <!-- Question Prompt -->
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 32px 24px; min-height: 140px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: var(--text-dark); line-height: 1.6; margin-bottom: 20px;">
+                    {{ c.question }}
+                </div>
+
+                <!-- Reveal Button -->
+                <button type="button" 
+                        id="reveal_btn_{{ c.id }}"
+                        onclick="revealAnswer({{ c.id }})" 
+                        class="quick-action-btn" 
+                        style="background: #ffffff; color: var(--primary-blue); border: 2px solid var(--primary-blue); font-size: 14px; padding: 10px 24px;">
+                    👁️ Reveal Technical Answer
+                </button>
+
+                <!-- Hidden Answer Box -->
+                <div id="answer_box_{{ c.id }}" style="display: none; margin-top: 20px; text-align: left;">
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 24px; font-size: 15px; color: #14532d; line-height: 1.7; white-space: pre-wrap; margin-bottom: 24px;">
+                        <strong>Key Explanation / Solution:</strong><br><br>{{ c.answer }}
+                    </div>
+
+                    <!-- Spaced Repetition Rating Buttons -->
+                    <div style="text-align: center;">
+                        <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px;">
+                            How well did you recall this concept?
+                        </div>
+                        <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                            <button type="button" onclick="submitRating({{ c.id }}, 'hard')" style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                                🔴 Hard / Forgot<br><span style="font-size: 10px; font-weight: 400;">Review Tomorrow (1 day)</span>
+                            </button>
+                            <button type="button" onclick="submitRating({{ c.id }}, 'good')" style="background: #fef3c7; border: 1px solid #fde68a; color: #92400e; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                                🟡 Good / Recalled<br><span style="font-size: 10px; font-weight: 400;">Review in {{ c.interval_days * 2 }} days</span>
+                            </button>
+                            <button type="button" onclick="submitRating({{ c.id }}, 'easy')" style="background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                                🟢 Easy / Mastered<br><span style="font-size: 10px; font-weight: 400;">Review in {{ c.interval_days * 3 }} days</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="deckFinishedBox" style="display: none; padding: 20px 0;">
+            <div style="font-size: 54px; margin-bottom: 10px;">🎉</div>
+            <h2 style="font-size: 22px; color: var(--text-dark); margin-bottom: 6px;">All Due Revisions Completed!</h2>
+            <p style="font-size: 14px; color: var(--text-muted); max-width: 450px; margin: 0 auto 20px;">
+                You have updated the spaced repetition intervals for all due cards. Memory pathways successfully reinforced!
+            </p>
+            <button type="button" onclick="window.location.reload()" class="quick-action-btn">
+                ✓ Refresh Revision Queue
+            </button>
+        </div>
+
+    </div>
+    {% endif %}
+
+    <!-- Generate Revision Cards Hub -->
+    <div class="dashboard-card">
+        <h3 class="dashboard-card-title">⚡ Generate AI Revision Flashcards</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+            Let Gemini generate 5 targeted high-yield memory retention flashcards for any engineering module.
+        </p>
+
+        <form id="genRevForm" onsubmit="generateRevisionCards(event)" style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <input type="text" id="revTopicInput" placeholder="e.g. Relational Calculus, Cache Mapping, Dynamic Programming..." required
+                   style="flex: 1; min-width: 260px; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px;">
+            
+            <button id="genRevBtn" type="submit" class="quick-action-btn" style="height: 44px; padding: 0 24px; font-size: 14px;">
+                <span id="genBtnIcon">🤖</span>
+                <span id="genBtnText">Generate & Schedule Cards</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Full Deck Schedule Table -->
+    <div class="dashboard-card">
+        <h3 class="dashboard-card-title">📋 Active Revision Deck & Spaced Calendar</h3>
+        
+        {% if due_cards or upcoming_cards %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted); background: #f8fafc;">
+                            <th style="padding: 12px 14px;">Topic</th>
+                            <th style="padding: 12px 14px;">Concept Question</th>
+                            <th style="padding: 12px 14px;">Next Review</th>
+                            <th style="padding: 12px 14px;">Interval</th>
+                            <th style="padding: 12px 14px;">Reps</th>
+                            <th style="padding: 12px 14px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Due Today Rows -->
+                        {% for c in due_cards %}
+                        <tr style="border-bottom: 1px solid var(--border-color); background: #fffbfb;">
+                            <td style="padding: 12px 14px; font-weight: 600; color: var(--primary-blue);">
+                                {{ c.topic }}
+                            </td>
+                            <td style="padding: 12px 14px; color: var(--text-dark); max-width: 320px;">
+                                {{ c.question }}
+                            </td>
+                            <td style="padding: 12px 14px;">
+                                <span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
+                                    ⚠️ Due Today
+                                </span>
+                            </td>
+                            <td style="padding: 12px 14px; color: var(--text-muted);">
+                                {{ c.interval_days }} day(s)
+                            </td>
+                            <td style="padding: 12px 14px; font-weight: 600;">
+                                {{ c.repetition_count }}x
+                            </td>
+                            <td style="padding: 12px 14px; text-align: right;">
+                                <form method="POST" action="/delete_revision_card/{{ c.id }}" onsubmit="return confirm('Remove card?');" style="margin: 0; display: inline;">
+                                    <button type="submit" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Upcoming Future Rows -->
+                        {% for c in upcoming_cards %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 12px 14px; font-weight: 600; color: #475569;">
+                                {{ c.topic }}
+                            </td>
+                            <td style="padding: 12px 14px; color: var(--text-dark); max-width: 320px;">
+                                {{ c.question }}
+                            </td>
+                            <td style="padding: 12px 14px; color: var(--text-muted);">
+                                📅 {{ c.next_review }}
+                            </td>
+                            <td style="padding: 12px 14px; color: var(--text-muted);">
+                                {{ c.interval_days }} day(s)
+                            </td>
+                            <td style="padding: 12px 14px; font-weight: 600;">
+                                {{ c.repetition_count }}x
+                            </td>
+                            <td style="padding: 12px 14px; text-align: right;">
+                                <form method="POST" action="/delete_revision_card/{{ c.id }}" onsubmit="return confirm('Remove card?');" style="margin: 0; display: inline;">
+                                    <button type="submit" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                <div style="font-size: 40px; margin-bottom: 10px;">🔄</div>
+                <div style="font-size: 15px; font-weight: 600; color: var(--text-dark);">Your Revision Deck is Empty</div>
+                <p style="font-size: 13px; margin-top: 4px;">
+                    Use the generator above to create your first set of spaced repetition flashcards!
+                </p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function revealAnswer(cardId) {
+        document.getElementById('reveal_btn_' + cardId).style.display = 'none';
+        document.getElementById('answer_box_' + cardId).style.display = 'block';
+    }
+
+    async function submitRating(cardId, rating) {
+        try {
+            const response = await fetch('/review_card/' + cardId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rating: rating })
+            });
+            const data = await response.json();
+            if (data.success) {
+                // Hide current card box and show next
+                const currentBox = document.getElementById('card_box_' + cardId);
+                const nextBox = currentBox.nextElementSibling;
+                currentBox.remove();
+
+                if (nextBox && nextBox.classList.contains('review-card-item')) {
+                    nextBox.style.display = 'block';
+                } else {
+                    document.getElementById('deckFinishedBox').style.display = 'block';
+                }
+            } else {
+                alert('Error updating card: ' + data.error);
+            }
+        } catch (err) {
+            alert('Network error submitting review.');
+        }
+    }
+
+    function quickGenerate(topic) {
+        document.getElementById('revTopicInput').value = topic;
+        document.getElementById('genRevForm').dispatchEvent(new Event('submit'));
+    }
+
+    async function generateRevisionCards(e) {
+        e.preventDefault();
+        const topic = document.getElementById('revTopicInput').value.trim();
+        if (!topic) return;
+
+        const btn = document.getElementById('genRevBtn');
+        const icon = document.getElementById('genBtnIcon');
+        const text = document.getElementById('genBtnText');
+
+        btn.disabled = true;
+        icon.innerText = '⏳';
+        text.innerText = 'Drafting Spaced Flashcards...';
+
+        try {
+            const response = await fetch('/generate_revision_cards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: topic })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(`🎉 Generated and scheduled ${data.count} new revision flashcards!`);
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to generate cards.'));
+            }
+        } catch (err) {
+            alert('Network error generating flashcards.');
+        } finally {
+            btn.disabled = false;
+            icon.innerText = '🤖';
+            text.innerText = 'Generate & Schedule Cards';
+        }
+    }
+</script>
+{% endblock %}

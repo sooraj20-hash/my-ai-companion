@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AI Flashcards</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .flashcard-container {
+            max-width: 700px;
+            margin: 50px auto;
+            text-align: center;
+        }
+
+        .flashcard {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+        .question {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 30px 0;
+        }
+
+        .answer {
+            display: none;
+            margin: 25px 0;
+            padding: 20px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        .flashcard-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .flashcard-btn:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="logo">
+        🎓 AI Study Companion
+    </div>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/upload">Upload Notes</a>
+    </nav>
+</header>
+
+<main class="flashcard-container">
+
+    <h1>📚 AI Flashcards</h1>
+
+    <p>Review important concepts from your study material.</p>
+
+    {% for card in flashcards %}
+
+    <div class="flashcard"
+         id="card-{{ loop.index }}"
+         style="{% if not loop.first %}display:none;{% endif %}">
+
+        <p>
+            Card {{ loop.index }} of {{ flashcards|length }}
+        </p>
+
+        <div class="question">
+            {{ card.question }}
+        </div>
+
+        <div class="answer">
+            <strong>Answer:</strong><br><br>
+            {{ card.answer }}
+        </div>
+
+        <button class="flashcard-btn"
+                onclick="showAnswer({{ loop.index }})">
+            👁 Show Answer
+        </button>
+
+        <button class="flashcard-btn"
+                onclick="nextCard({{ loop.index }})">
+            Next →
+        </button>
+
+    </div>
+
+    {% endfor %}
+
+</main>
+
+<script>
+
+function showAnswer(number) {
+
+    const card =
+        document.getElementById("card-" + number);
+
+    card.querySelector(".answer")
+        .style.display = "block";
+}
+
+
+function nextCard(number) {
+
+    const current =
+        document.getElementById("card-" + number);
+
+    const next =
+        document.getElementById("card-" + (number + 1));
+
+    current.style.display = "none";
+
+    if (next) {
+        next.style.display = "block";
+    } else {
+        alert("🎉 You completed all flashcards!");
+    }
+}
+
+</script>
+
+</body>
+</html>

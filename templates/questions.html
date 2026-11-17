@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>VTU/GATE Questions</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .questions-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .question-card {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .question-type {
+            color: #2563eb;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 19px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .option {
+            padding: 10px;
+            margin: 6px 0;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+
+        .answer {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #16a34a;
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="logo">
+        🎓 AI Study Companion
+    </div>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/upload">Upload Notes</a>
+    </nav>
+</header>
+
+<main class="questions-container">
+
+    <h1>🎓 VTU/GATE Practice Questions</h1>
+
+    {% for q in questions %}
+
+    <div class="question-card">
+
+        <div class="question-type">
+            {{ q.type }}
+        </div>
+
+        <div class="question-text">
+            {{ loop.index }}. {{ q.question }}
+        </div>
+
+        {% if q.options %}
+
+            <div class="option">
+                A) {{ q.options.A }}
+            </div>
+
+            <div class="option">
+                B) {{ q.options.B }}
+            </div>
+
+            <div class="option">
+                C) {{ q.options.C }}
+            </div>
+
+            <div class="option">
+                D) {{ q.options.D }}
+            </div>
+
+            <div class="answer">
+                Correct Answer: {{ q.answer }}
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    {% endfor %}
+
+</main>
+
+</body>
+</html>

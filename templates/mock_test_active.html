@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Examination - {{ test.test_format }}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .exam-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #ffffff;
+            border-bottom: 2px solid var(--border-color);
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .timer-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: var(--primary-blue);
+            padding: 8px 18px;
+            border-radius: 9999px;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: monospace;
+        }
+
+        .timer-badge.warning {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #dc2626;
+            animation: pulse 1s infinite;
+        }
+
+        .exam-container {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 24px;
+        }
+
+        .question-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .palette-btn {
+            height: 40px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .palette-btn.answered {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        @media (max-width: 900px) {
+            .exam-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sticky Exam Topbar -->
+    <header class="exam-header">
+        <div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--text-dark);">
+                🎓 {{ test.test_format }}
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+                Subject: {{ test.subject }} • Questions: {{ test.questions|length }}
+            </div>
+        </div>
+
+        <!-- Live Countdown Timer -->
+        <div id="timerBadge" class="timer-badge">
+            <span>⏱️</span>
+            <span id="timerDisplay">10:00</span>
+        </div>
+
+        <button type="button" class="quick-action-btn" style="background: #16a34a; font-size: 14px; padding: 10px 20px;" onclick="confirmSubmit()">
+            ✓ Finish & Submit Test
+        </button>
+    </header>
+
+    <div class="exam-container">
+        
+        <!-- Main Questions Form -->
+        <form id="mockTestForm" method="POST" action="/submit_mock_test">
+            <input type="hidden" id="timeTakenSeconds" name="time_taken_seconds" value="0">
+
+            {% for q in test.questions %}
+            <div id="q_card_{{ q.id }}" class="question-card">
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <span style="background: #eff6ff; color: var(--primary-blue); font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 9999px;">
+                        Question {{ loop.index }} • {{ q.type }} ({{ q.marks }} Marks)
+                    </span>
+                    <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+                        Topic: {{ q.topic }}
+                    </span>
+                </div>
+
+                <div style="font-size: 16px; font-weight: 600; color: var(--text-dark); margin-bottom: 20px; line-height: 1.5;">
+                    {{ q.question }}
+                </div>
+
+                <!-- If MCQ Question -->
+                {% if q.options %}
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        {% for opt_key, opt_val in q.options.items() %}
+                        <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; background: #f8fafc; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="if(!this.querySelector('input').checked) this.style.background='#f8fafc'">
+                            <input type="radio" 
+                                   name="q_{{ q.id }}" 
+                                   value="{{ opt_key }}" 
+                                   onchange="markAnswered({{ q.id }})" 
+                                   style="width: 18px; height: 18px; accent-color: var(--primary-blue);">
+                            <span style="font-size: 14px; color: var(--text-dark);">
+                                <strong>{{ opt_key }})</strong> {{ opt_val }}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Descriptive Written Answer (VTU 2-Mark or 5-Mark) -->
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">
+                            Write your technical answer below (derivation, explanation, or key points):
+                        </label>
+                        <textarea name="q_{{ q.id }}" 
+                                  rows="4" 
+                                  placeholder="Type your explanation here. Cover key technical terms and concepts..."
+                                  oninput="markAnswered({{ q.id }})"
+                                  style="width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; font-family: inherit; line-height: 1.6;"></textarea>
+                    </div>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+
+            <div style="text-align: center; margin: 30px 0;">
+                <button type="button" class="quick-action-btn" style="background: #16a34a; font-size: 16px; padding: 14px 36px;" onclick="confirmSubmit()">
+                    ✓ Submit Examination for AI Evaluation
+                </button>
+            </div>
+        </form>
+
+        <!-- Right Side: Question Navigation Palette -->
+        <aside>
+            <div class="question-card" style="position: sticky; top: 90px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--text-dark);">
+                    Question Palette
+                </h4>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px; display: flex; gap: 12px;">
+                    <span style="display: flex; align-items: center; gap: 4px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; background: #dcfce7; border: 1px solid #86efac; border-radius: 2px;"></span> Answered
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 4px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 2px;"></span> Unanswered
+                    </span>
+                </div>
+
+                <div class="palette-grid">
+                    {% for q in test.questions %}
+                    <button type="button" 
+                            id="palette_btn_{{ q.id }}" 
+                            class="palette-btn" 
+                            onclick="scrollToQuestion('q_card_{{ q.id }}')">
+                        Q{{ loop.index }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Countdown & Submission Logic -->
+    <script>
+        let durationSeconds = {{ test.duration_seconds }};
+        let remainingSeconds = durationSeconds;
+        let timeTaken = 0;
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerBadge = document.getElementById('timerBadge');
+        const timeTakenInput = document.getElementById('timeTakenSeconds');
+
+        function updateCountdown() {
+            let mins = Math.floor(remainingSeconds / 60);
+            let secs = remainingSeconds % 60;
+            timerDisplay.innerText = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+            if (remainingSeconds <= 120) {
+                timerBadge.classList.add('warning');
+            }
+
+            if (remainingSeconds <= 0) {
+                clearInterval(countdownInterval);
+                alert('⏰ Examination time is up! Auto-submitting your answers for automated AI evaluation...');
+                document.getElementById('mockTestForm').submit();
+            }
+
+            remainingSeconds--;
+            timeTaken++;
+            timeTakenInput.value = timeTaken;
+        }
+
+        updateCountdown();
+        const countdownInterval = setInterval(updateCountdown, 1000);
+
+        function markAnswered(qId) {
+            const btn = document.getElementById('palette_btn_' + qId);
+            if (btn) btn.classList.add('answered');
+        }
+
+        function scrollToQuestion(cardId) {
+            const el = document.getElementById(cardId);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function confirmSubmit() {
+            if (confirm('Are you sure you want to finalize and submit this examination?')) {
+                clearInterval(countdownInterval);
+                document.getElementById('mockTestForm').submit();
+            }
+        }
+    </script>
+</body>
+</html>
